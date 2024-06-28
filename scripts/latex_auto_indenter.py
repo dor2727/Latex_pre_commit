@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
+import itertools
 import re
 import sys
 from typing import TextIO
 
-from utils import REGEX_IS_SECTION, REGEX_IS_SUBSECTION, REGEX_IS_SUBSUBSECTION, is_line_empty, is_next_line_empty, is_previous_line_empty
+from utils import (
+	REGEX_ALWAYS_NEEDS_SPACER,
+	REGEX_IS_SECTION,
+	REGEX_IS_SUBSECTION,
+	REGEX_IS_SUBSUBSECTION,
+	REGEX_NEEDS_SPACER_IF_NOT_IN_A_ROW,
+	is_line_empty,
+	is_next_line_empty,
+	is_previous_line_empty,
+)
+
+REGEX_BREAK_INDENTATION = lambda: itertools.chain(REGEX_ALWAYS_NEEDS_SPACER, REGEX_NEEDS_SPACER_IF_NOT_IN_A_ROW)
 
 SHOULD_ADD_EMPTY_LINE_AFTER_SECTION = True
 SHOULD_ADD_EMPTY_LINE_AFTER_SUBSECTION = True
@@ -50,6 +62,9 @@ def apply_indenter(file_path: str) -> None:
 					SHOULD_ADD_EMPTY_LINE_BEFORE_SUBSUBSECTION,
 				)
 				current_indentation = INDENTATION * SUBSUBSECTION_INDENTATION
+			elif any(re.match(pattern, line) for pattern in REGEX_BREAK_INDENTATION()):
+				current_indentation = ""
+				file.write(current_indentation + line.lstrip())
 			else:
 				file.write(current_indentation + line.lstrip())
 
