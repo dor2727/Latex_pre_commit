@@ -3,10 +3,7 @@ import re
 import sys
 from typing import TextIO
 
-REGEX_IS_EMPTY_LINE = re.compile("(^\\s*$)|(^\\s*\\%)")
-REGEX_IS_SECTION = re.compile("^\\s*\\\\section\\*?\\{")
-REGEX_IS_SUBSECTION = re.compile("^\\s*\\\\subsection\\*?\\{")
-REGEX_IS_SUBSUBSECTION = re.compile("^\\s*\\\\subsubsection\\*?\\{")
+from utils import REGEX_IS_SECTION, REGEX_IS_SUBSECTION, REGEX_IS_SUBSUBSECTION, is_line_empty, is_next_line_empty, is_previous_line_empty
 
 SHOULD_ADD_EMPTY_LINE_AFTER_SECTION = True
 SHOULD_ADD_EMPTY_LINE_AFTER_SUBSECTION = True
@@ -30,7 +27,7 @@ def apply_indenter(file_path: str) -> None:
 
 	with open(file_path, "w") as file:
 		for line_index, line in enumerate(lines):
-			if re.match(REGEX_IS_EMPTY_LINE, line):
+			if is_line_empty(line):
 				file.write(line)
 			elif re.match(REGEX_IS_SECTION, line):
 				write_special_line(
@@ -60,33 +57,14 @@ def apply_indenter(file_path: str) -> None:
 def write_special_line(
 	file: TextIO, lines: list[str], line: str, line_index: int, special_indentation: int, should_add_empty_line_after: bool, should_add_empty_line_before: bool
 ) -> None:
-	if should_add_empty_line_before and not _is_previous_line_empty(lines, line_index):
+	if should_add_empty_line_before and not is_previous_line_empty(lines, line_index):
 		file.write("\n")
 
 	indentation = INDENTATION * (special_indentation - 1)
 	file.write(indentation + line.lstrip())
 
-	if should_add_empty_line_after and not _is_next_line_empty(lines, line_index):
+	if should_add_empty_line_after and not is_next_line_empty(lines, line_index):
 		file.write("\n")
-
-
-def _is_line_empty(line: str) -> bool:
-	return bool(re.match(REGEX_IS_EMPTY_LINE, line))
-
-
-def _is_next_line_empty(lines: list[str], line_index: int) -> bool:
-	next_line_index = line_index + 1
-	if next_line_index == len(lines):
-		return True  # the last line is like an empty line
-
-	return _is_line_empty(lines[next_line_index])
-
-
-def _is_previous_line_empty(lines: list[str], line_index: int) -> bool:
-	if line_index == 0:
-		return True  # the first line is like an empty line
-
-	return _is_line_empty(lines[line_index - 1])
 
 
 def main() -> None:

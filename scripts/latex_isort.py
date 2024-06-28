@@ -3,12 +3,7 @@
 import re
 import sys
 
-REGEX_IS_USE_PACKAGE = re.compile("^\\s*\\\\usepackage\\b")
-REGEX_IS_EMPTY_LINE = re.compile("(^\\s*$)|(^\\s*\\%)")
-
-REGEX_USE_PACKAGE_SIMPLE = re.compile("^\\s*\\\\usepackage\\{([a-zA-Z]+)\\}")
-REGEX_USE_PACKAGE_WITH_CONFIG = re.compile("^\\s*\\\\usepackage\\[.*?\\]\\{([a-zA-Z]+)\\}")
-
+from utils import REGEX_IS_USE_PACKAGE, REGEX_USE_PACKAGE_SIMPLE, REGEX_USE_PACKAGE_WITH_CONFIG, is_line_empty
 
 SHOULD_ADD_EMPTY_LINE_AFTER_USEPACKAGE = True
 SHOULD_ADD_EMPTY_LINE_BEFORE_USEPACKAGE = False
@@ -45,7 +40,7 @@ def _collect_usepackage_lines(lines: list[str]) -> tuple[int | None, int | None,
 		elif last_usepackage_line is None:  # started collecting lines
 			if re.match(REGEX_IS_USE_PACKAGE, line):
 				usepackage_lines.append(line)
-			elif re.match(REGEX_IS_EMPTY_LINE, line):
+			elif is_line_empty(line):
 				continue
 			else:
 				last_usepackage_line = line_index
