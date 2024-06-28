@@ -10,15 +10,30 @@ REGEX_USE_PACKAGE_SIMPLE = re.compile("^\\s*\\\\usepackage\\{([a-zA-Z]+)\\}")
 REGEX_USE_PACKAGE_WITH_CONFIG = re.compile("^\\s*\\\\usepackage\\[.*?\\]\\{([a-zA-Z]+)\\}")
 
 
+SHOULD_ADD_EMPTY_LINE_AFTER_USEPACKAGE = True
+SHOULD_ADD_EMPTY_LINE_BEFORE_USEPACKAGE = False
+
+
 def apply_package_sort(file_path: str) -> None:
+	with open(file_path) as file:
+		lines = file.readlines()
+
+	first_usepackage_line, last_usepackage_line, usepackage_lines, scattered_lines_indexes, scattered_lines = _collect_usepackage_lines(lines)
+
+	if first_usepackage_line is None or last_usepackage_line is None:
+		return
+
+	sorted_usepackage_lines = sort_usepackage_lines(usepackage_lines + scattered_lines)
+
+	_write_usepackage_lines(file_path, first_usepackage_line, last_usepackage_line, sorted_usepackage_lines, scattered_lines_indexes)
+
+
+def _collect_usepackage_lines(lines: list[str]) -> tuple[int | None, int | None, list[str], list[int], list[str]]:
 	first_usepackage_line = None
 	last_usepackage_line = None
 	scattered_lines: list[str] = []
 	scattered_lines_indexes: list[int] = []
 	usepackage_lines: list[str] = []
-
-	with open(file_path) as file:
-		lines = file.readlines()
 
 	for line_index, line in enumerate(lines):
 		if first_usepackage_line is None:  # haven't started collecting lines
@@ -39,24 +54,7 @@ def apply_package_sort(file_path: str) -> None:
 				scattered_lines.append(line)
 				scattered_lines_indexes.append(line_index)
 
-	if first_usepackage_line is None or last_usepackage_line is None:
-		return
-
-	# sorted_usepackage_lines = sorted(usepackage_lines + scattered_lines)
-	sorted_usepackage_lines = sort_usepackage_lines(usepackage_lines + scattered_lines)
-
-	with open(file_path, "w") as file:
-		for line in lines[:first_usepackage_line]:
-			file.write(line)
-		# file.write('\n')
-		for line in sorted_usepackage_lines:
-			file.write(line)
-		file.write("\n")
-		for line_index, line in enumerate(lines[last_usepackage_line:]):
-			if (line_index + last_usepackage_line) in scattered_lines_indexes:
-				continue
-			else:
-				file.write(line)
+	return first_usepackage_line, last_usepackage_line, usepackage_lines, scattered_lines_indexes, scattered_lines
 
 
 def sort_usepackage_lines(usepackage_lines: list[str]) -> list[str]:
@@ -75,6 +73,32 @@ def sort_usepackage_lines(usepackage_lines: list[str]) -> list[str]:
 	sorted_usepackage_lines_with_config = [usepackage_lines_with_config[key] for key in sorted(usepackage_lines_with_config)]
 
 	return sorted_usepackage_lines_simple + ["\n"] + sorted_usepackage_lines_with_config
+
+
+def _write_usepackage_lines(
+	file_path: str, first_usepackage_line: int, last_usepackage_line: int, sorted_usepackage_lines: list[str], scattered_lines_indexes: list[int]
+) -> None:
+	with open(file_path) as file:
+		lines = file.readlines()
+
+	with open(file_path, "w") as file:
+		for line in lines[:first_usepackage_line]:
+			file.write(line)
+
+		if SHOULD_ADD_EMPTY_LINE_BEFORE_USEPACKAGE:
+			file.write("\n")
+
+		for line in sorted_usepackage_lines:
+			file.write(line)
+
+		if SHOULD_ADD_EMPTY_LINE_AFTER_USEPACKAGE:
+			file.write("\n")
+
+		for line_index, line in enumerate(lines[last_usepackage_line:]):
+			if (line_index + last_usepackage_line) in scattered_lines_indexes:
+				continue
+			else:
+				file.write(line)
 
 
 def main() -> None:
