@@ -25,7 +25,7 @@ def apply_package_sort(file_path: str) -> None:
 
 	sorted_usepackage_lines = sort_usepackage_lines(usepackage_lines + scattered_lines)
 
-	_write_usepackage_lines(file_path, first_usepackage_line, last_usepackage_line, sorted_usepackage_lines, scattered_lines_indexes)
+	_write_usepackage_lines(file_path, lines, first_usepackage_line, last_usepackage_line, sorted_usepackage_lines, scattered_lines_indexes)
 
 
 def _collect_usepackage_lines(lines: list[str]) -> tuple[int | None, int | None, list[str], list[int], list[str]]:
@@ -76,11 +76,13 @@ def sort_usepackage_lines(usepackage_lines: list[str]) -> list[str]:
 
 
 def _write_usepackage_lines(
-	file_path: str, first_usepackage_line: int, last_usepackage_line: int, sorted_usepackage_lines: list[str], scattered_lines_indexes: list[int]
+	file_path: str,
+	lines: list[str],
+	first_usepackage_line: int,
+	last_usepackage_line: int,
+	sorted_usepackage_lines: list[str],
+	scattered_lines_indexes: list[int],
 ) -> None:
-	with open(file_path) as file:
-		lines = file.readlines()
-
 	with open(file_path, "w") as file:
 		for line in lines[:first_usepackage_line]:
 			file.write(line)
